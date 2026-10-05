@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rabt · لوحة المتجر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<style>
+  :root{--ink:#1b1f1c;--paper:#faf7f1;--sand:#ede3d1;--green:#1f4d3a;--green-deep:#143527;--saffron:#d99a2b;--muted:#6d726e;--line:#dcd4c6;--red:#a33}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans Arabic",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  input,textarea,select{font:inherit;font-size:15px;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+  input:focus,textarea:focus{outline:3px solid var(--saffron);outline-offset:1px;border-color:var(--green)}
+  .wrap{max-width:720px;margin:0 auto;padding:0 16px 80px}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:22px 0 10px}
+  .brand{font-size:15px;font-weight:700;color:var(--green)}
+  .top .r{display:flex;gap:8px;align-items:center}
+  .lang{display:inline-flex;gap:2px;background:var(--sand);border-radius:999px;padding:3px}
+  .lang button{padding:5px 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--muted)}
+  .lang button.on{background:var(--green);color:#fff}
+  .ghost{font-size:13px;color:var(--muted);padding:6px 10px;border-radius:8px}
+  .ghost:hover{background:var(--sand)}
+  h1{font-size:28px;line-height:1.2;margin:14px 0 8px}
+  .sub{color:var(--muted);font-size:15px;line-height:1.7;max-width:50ch}
+  section{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 18px;margin-top:16px}
+  h2{font-size:17px;margin-bottom:4px}
+  .hint{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6}
+  label{display:block;font-size:13px;font-weight:600;margin:12px 0 5px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:480px){.two{grid-template-columns:1fr}}
+  .btn{padding:13px 18px;border-radius:12px;font-weight:700;font-size:15px;background:var(--green);color:#fff}
+  .btn:hover{background:var(--green-deep)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn.full{width:100%;margin-top:16px}
+  .btn.light{background:var(--sand);color:var(--ink)}
+  .msg{margin-top:12px;font-size:14px;line-height:1.6;padding:10px 12px;border-radius:10px;display:none}
+  .msg.ok{display:block;background:#e4f1ea;color:var(--green)}
+  .msg.err{display:block;background:#f6e3e3;color:var(--red)}
+  .slugrow{display:flex;align-items:center;gap:6px;direction:ltr}
+  .slugrow span{color:var(--muted);font-size:14px;white-space:nowrap}
+  .slugrow input{direction:ltr}
+  .linkbox{display:flex;gap:8px;margin-top:8px}
+  .linkbox input{font-size:13px;direction:ltr;text-align:left;background:var(--paper)}
+  .linkbox button{flex:none;padding:0 16px;background:var(--green);color:#fff;border-radius:10px;font-weight:600}
+  .prod{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+  .prod:last-child{border-bottom:0}
+  .prod .th{width:56px;height:56px;border-radius:10px;background:var(--sand);flex:none;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--green);font-weight:700;font-size:20px}
+  .prod .th img{width:100%;height:100%;object-fit:cover}
+  .prod .info{flex:1;min-width:0}
+  .prod .n{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prod .p{font-size:13px;color:var(--muted)}
+  .prod .p b{color:var(--green)}
+  .prod.oos .n{text-decoration:line-through;color:var(--muted)}
+  .prod .acts{display:flex;gap:4px;flex:none}
+  .prod .acts button{font-size:12px;padding:6px 9px;border-radius:8px;border:1px solid var(--line);color:var(--ink)}
+  .prod .acts button:hover{background:var(--sand)}
+  .prod .acts button.on{background:var(--green);color:#fff;border-color:var(--green)}
+  .empty{color:var(--muted);font-size:14px;padding:16px 0;text-align:center;line-height:1.7}
+  .hidden{display:none!important}
+  .imgpick{display:flex;gap:10px;align-items:center}
+  .imgpick .pv{width:64px;height:64px;border-radius:10px;background:var(--sand);overflow:hidden;flex:none}
+  .imgpick .pv img{width:100%;height:100%;object-fit:cover}
+  .imgpick input[type=file]{padding:8px;font-size:13px}
+  dialog{border:0;border-radius:16px;padding:0;width:min(94vw,480px);background:#fff;color:var(--ink);font-family:inherit}
+  dialog::backdrop{background:rgba(20,30,25,.55)}
+  .dlg{padding:20px}
+  .dlg h2{margin-bottom:10px}
+  .check{display:flex;align-items:center;gap:8px;font-size:14px;margin-top:14px}
+  .check input{width:auto}
+  .row{display:flex;gap:10px;margin-top:18px}
+  .row .btn{flex:1}
+  .del{color:var(--red);font-size:13px;margin-top:14px;display:block;text-align:center;width:100%}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">Rabt · ربط</div>
+    <div class="r">
+      <div class="lang"><button id="lAr" class="on">عربي</button><button id="lEn">EN</button></div>
+      <button class="ghost hidden" id="logout" data-ar="خروج" data-en="Sign out">خروج</button>
+    </div>
+  </div>
+
+  <!-- AUTH -->
+  <div id="vAuth">
+    <h1 data-ar="لوحة متجرك" data-en="Your shop dashboard">لوحة متجرك</h1>
+    <p class="sub" data-ar="سجّل الدخول أو أنشئ حساباً بالإيميل. رابط متجرك ثابت، وأي تعديل يظهر للزبائن فوراً."
+       data-en="Sign in or create an account with email. Your shop link never changes, and edits show to customers instantly.">سجّل الدخول أو أنشئ حساباً بالإيميل. رابط متجرك ثابت، وأي تعديل يظهر للزبائن فوراً.</p>
+    <section>
+      <label data-ar="الإيميل" data-en="Email">الإيميل</label><input id="email" type="email" dir="ltr" autocomplete="email">
+      <label data-ar="كلمة المرور" data-en="Password">كلمة المرور</label><input id="pass" type="password" dir="ltr" autocomplete="current-password">
+      <div class="row">
+        <button class="btn" id="signin" data-ar="دخول" data-en="Sign in">دخول</button>
+        <button class="btn light" id="signup" data-ar="حساب جديد" data-en="Create account">حساب جديد</button>
+      </div>
+      <div class="msg" id="authMsg"></div>
+    </section>
+  </div>
+
+  <!-- SHOP -->
+  <div id="vShop" class="hidden">
+    <h1 id="hTitle"></h1>
+    <section>
+      <h2 data-ar="بيانات المتجر" data-en="Shop details">بيانات المتجر</h2>
+      <div class="hint" data-ar="رقم الواتساب بصيغة دولية بدون + أو مسافات، مثل 96891234567" data-en="WhatsApp number in international format, no + or spaces, e.g. 96891234567">رقم الواتساب بصيغة دولية بدون + أو مسافات، مثل 96891234567</div>
+      <label data-ar="اسم الرابط (حروف إنجليزية صغيرة وأرقام فقط)" data-en="Link name (lowercase letters and numbers only)">اسم الرابط (حروف إنجليزية صغيرة وأرقام فقط)</label>
+      <div class="slugrow"><span id="base"></span><input id="slug" placeholder="noor" maxlength="30"></div>
+      <div class="two">
+        <div><label data-ar="اسم المتجر (عربي)" data-en="Shop name (Arabic)">اسم المتجر (عربي)</label><input id="nameAr"></div>
+        <div><label data-ar="اسم المتجر (إنجليزي)" data-en="Shop name (English)">اسم المتجر (إنجليزي)</label><input id="nameEn"></div>
+      </div>
+      <label data-ar="رقم الواتساب" data-en="WhatsApp number">رقم الواتساب</label><input id="wa" inputmode="numeric" dir="ltr">
+      <label data-ar="سطر تعريفي قصير (اختياري)" data-en="Short tagline (optional)">سطر تعريفي قصير (اختياري)</label><input id="tag">
+      <button class="btn full" id="saveShop" data-ar="حفظ" data-en="Save">حفظ</button>
+      <div class="msg" id="shopMsg"></div>
+      <div id="linkWrap" class="hidden">
+        <label data-ar="رابط متجرك، ضعه في بايو إنستغرام" data-en="Your shop link, put it in your Instagram bio">رابط متجرك، ضعه في بايو إنستغرام</label>
+        <div class="linkbox"><input id="link" readonly><button id="copy" data-ar="نسخ" data-en="Copy">نسخ</button></div>
+      </div>
+    </section>
+
+    <section id="secProds" class="hidden">
+      <h2 data-ar="المنتجات" data-en="Products">المنتجات</h2>
+      <div class="hint" data-ar="اضغط «نفذ» لإخفاء المنتج مؤقتاً دون حذفه." data-en="Tap “Sold out” to hide a product temporarily without deleting it.">اضغط «نفذ» لإخفاء المنتج مؤقتاً دون حذفه.</div>
+      <div id="list"></div>
+      <button class="btn full" id="addProd" data-ar="+ أضف منتج" data-en="+ Add product">+ أضف منتج</button>
+    </section>
+  </div>
+</div>
+
+<dialog id="pd">
+  <form method="dialog" class="dlg" id="pf">
+    <h2 id="pdT"></h2>
+    <div class="two">
+      <div><label data-ar="اسم المنتج (عربي)" data-en="Name (Arabic)">اسم المنتج (عربي)</label><input id="pAr"></div>
+      <div><label data-ar="اسم المنتج (إنجليزي)" data-en="Name (English)">اسم المنتج (إنجليزي)</label><input id="pEn"></div>
+    </div>
+    <label data-ar="السعر (ر.ع)" data-en="Price (OMR)">السعر (ر.ع)</label><input id="pPrice" inputmode="decimal" dir="ltr">
+    <label data-ar="الصورة" data-en="Image">الصورة</label>
+    <div class="imgpick"><div class="pv" id="pv"></div><input type="file" id="pFile" accept="image/*"></div>
+    <div class="two">
+      <div><label data-ar="اسم الخيار (مثل: المقاس)" data-en="Option label (e.g. Size)">اسم الخيار (مثل: المقاس)</label><input id="pVl"></div>
+      <div><label data-ar="الخيارات، افصل بفاصلة" data-en="Options, comma separated">الخيارات، افصل بفاصلة</label><input id="pVs" placeholder="S, M, L"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="pOos"> <span data-ar="نفذ من المخزون" data-en="Sold out">نفذ من المخزون</span></label>
+    <div class="row">
+      <button type="button" class="btn light" id="pCancel" data-ar="رجوع" data-en="Back">رجوع</button>
+      <button type="button" class="btn" id="pSave" data-ar="حفظ" data-en="Save">حفظ</button>
+    </div>
+    <button type="button" class="del hidden" id="pDel" data-ar="حذف هذا المنتج" data-en="Delete this product">حذف هذا المنتج</button>
+    <div class="msg" id="pMsg"></div>
+  </form>
+</dialog>
+
+<script>
+const sb = supabase.createClient(RABT.url, RABT.key);
+let lang="ar", user=null, shop=null, prods=[], editing=null, pendingImg=null;
+const $=id=>document.getElementById(id);
+const S={ar:{title:n=>n?`متجر ${n}`:"متجرك",saved:"تم الحفظ",taken:"اسم الرابط مستخدم، جرّب اسماً آخر",need:"أدخل اسم الرابط ورقم الواتساب",noProd:"لا توجد منتجات بعد. أضف أول منتج.",add:"منتج جديد",edit:"تعديل المنتج",oos:"نفذ",avail:"متوفر",ed:"تعديل",confirm:"حذف المنتج نهائياً؟",copied:"تم النسخ",copy:"نسخ",
+  signupOk:"تم إنشاء الحساب. إذا طُلب تأكيد الإيميل، افتح رسالة التأكيد ثم سجّل الدخول.",bad:"بيانات الدخول غير صحيحة",pw:"كلمة المرور 6 أحرف على الأقل",up:"جارٍ الرفع…"},
+ en:{title:n=>n?`${n}`:"Your shop",saved:"Saved",taken:"That link name is taken, try another",need:"Enter a link name and WhatsApp number",noProd:"No products yet. Add the first one.",add:"New product",edit:"Edit product",oos:"Sold out",avail:"Available",ed:"Edit",confirm:"Delete this product permanently?",copied:"Copied",copy:"Copy",
+  signupOk:"Account created. If email confirmation is required, open the email then sign in.",bad:"Wrong email or password",pw:"Password must be at least 6 characters",up:"Uploading…"}};
+const t=()=>S[lang];
+const baseUrl=()=>new URL("catalog.html",location.href).href+"?s=";
+
+function setLang(l){ lang=l; document.documentElement.lang=l; document.documentElement.dir=l==="ar"?"rtl":"ltr";
+  document.querySelectorAll("[data-ar]").forEach(e=>e.textContent=e.dataset[l]);
+  $("lAr").classList.toggle("on",l==="ar"); $("lEn").classList.toggle("on",l==="en"); if(shop!==undefined) renderShop(); }
+function msg(id,text,ok){ const m=$(id); m.textContent=text; m.className="msg "+(ok?"ok":"err"); if(ok) setTimeout(()=>m.className="msg",2500); }
+function money(n){ return Number(n).toFixed(3).replace(/\.?0+$/,""); }
+
+// AUTH
+$("signin").onclick=async()=>{ const {error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("pass").value}); if(error) msg("authMsg",t().bad); };
+$("signup").onclick=async()=>{ const p=$("pass").value; if(p.length<6) return msg("authMsg",t().pw);
+  const {data,error}=await sb.auth.signUp({email:$("email").value.trim(),password:p}); if(error) return msg("authMsg",error.message);
+  if(!data.session) msg("authMsg",t().signupOk,true); };
+$("logout").onclick=()=>sb.auth.signOut();
+sb.auth.onAuthStateChange((_,session)=>{ user=session?.user||null; $("vAuth").classList.toggle("hidden",!!user); $("vShop").classList.toggle("hidden",!user); $("logout").classList.toggle("hidden",!user); if(user) loadShop(); });
+
+// SHOP
+async function loadShop(){
+  const {data}=await sb.from("shops").select("*").eq("owner",user.id).maybeSingle(); shop=data||null;
+  $("base").textContent=baseUrl();
+  if(shop){ $("slug").value=shop.slug; $("nameAr").value=shop.name_ar; $("nameEn").value=shop.name_en; $("wa").value=shop.wa; $("tag").value=shop.tag||""; await loadProds(); }
+  renderShop();
+}
+function renderShop(){
+  const n=lang==="ar"?(shop?.name_ar||shop?.name_en):(shop?.name_en||shop?.name_ar); $("hTitle").textContent=t().title(n);
+  $("linkWrap").classList.toggle("hidden",!shop); $("secProds").classList.toggle("hidden",!shop);
+  if(shop) $("link").value=baseUrl()+shop.slug;
+  renderProds();
+}
+$("saveShop").onclick=async()=>{
+  const slug=$("slug").value.trim().toLowerCase().replace(/[^a-z0-9-]/g,""), wa=$("wa").value.replace(/\D/g,"");
+  if(slug.length<3||!wa) return msg("shopMsg",t().need);
+  const row={owner:user.id,slug,name_ar:$("nameAr").value.trim(),name_en:$("nameEn").value.trim(),wa,tag:$("tag").value.trim(),lang};
+  const q=shop?sb.from("shops").update(row).eq("id",shop.id):sb.from("shops").insert(row);
+  const {data,error}=await q.select().single();
+  if(error) return msg("shopMsg",error.code==="23505"?t().taken:error.message);
+  shop=data; $("slug").value=shop.slug; msg("shopMsg",t().saved,true); renderShop();
+};
+$("copy").onclick=async()=>{ try{await navigator.clipboard.writeText($("link").value);}catch(e){$("link").select();document.execCommand("copy");} $("copy").textContent=t().copied; setTimeout(()=>$("copy").textContent=t().copy,1500); };
+
+// PRODUCTS
+async function loadProds(){ const {data}=await sb.from("products").select("*").eq("shop_id",shop.id).order("sort").order("created_at"); prods=data||[]; }
+function renderProds(){
+  const l=$("list"); l.innerHTML="";
+  if(!prods.length){ l.innerHTML=`<div class="empty">${t().noProd}</div>`; return; }
+  prods.forEach(p=>{
+    const name=lang==="ar"?(p.name_ar||p.name_en):(p.name_en||p.name_ar);
+    const d=document.createElement("div"); d.className="prod"+(p.oos?" oos":"");
+    d.innerHTML=`<div class="th">${p.img?`<img src="${p.img}" alt="">`:(name||"?").charAt(0)}</div>
+      <div class="info"><div class="n">${name}</div><div class="p"><b>${money(p.price)}</b> ر.ع${p.variants?.length?" · "+p.variants.join(", "):""}</div></div>
+      <div class="acts"><button class="oosb ${p.oos?"on":""}">${t().oos}</button><button class="edb">${t().ed}</button></div>`;
+    d.querySelector(".oosb").onclick=async()=>{ await sb.from("products").update({oos:!p.oos}).eq("id",p.id); p.oos=!p.oos; renderProds(); };
+    d.querySelector(".edb").onclick=()=>openProd(p);
+    l.appendChild(d);
+  });
+}
+function openProd(p){
+  editing=p; pendingImg=null; $("pdT").textContent=p?t().edit:t().add;
+  $("pAr").value=p?.name_ar||""; $("pEn").value=p?.name_en||""; $("pPrice").value=p?p.price:""; $("pVl").value=p?.vlabel||""; $("pVs").value=p?.variants?.join(", ")||""; $("pOos").checked=!!p?.oos;
+  $("pv").innerHTML=p?.img?`<img src="${p.img}" alt="">`:""; $("pFile").value=""; $("pDel").classList.toggle("hidden",!p); $("pMsg").className="msg";
+  $("pd").showModal();
+}
+$("addProd").onclick=()=>openProd(null);
+$("pCancel").onclick=()=>$("pd").close();
+$("pFile").onchange=e=>{ const f=e.target.files[0]; if(!f) return; pendingImg=f; $("pv").innerHTML=`<img src="${URL.createObjectURL(f)}" alt="">`; };
+async function compress(file,max=900){ const img=await createImageBitmap(file); const s=Math.min(1,max/Math.max(img.width,img.height));
+  const c=document.createElement("canvas"); c.width=img.width*s; c.height=img.height*s; c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+  return new Promise(r=>c.toBlob(r,"image/jpeg",.82)); }
+$("pSave").onclick=async()=>{
+  $("pSave").disabled=true;
+  try{
+    let img=editing?.img||null;
+    if(pendingImg){ msg("pMsg",t().up,true); const blob=await compress(pendingImg); const path=`${user.id}/${Date.now()}.jpg`;
+      const {error}=await sb.storage.from("images").upload(path,blob,{contentType:"image/jpeg"}); if(error) throw error;
+      img=sb.storage.from("images").getPublicUrl(path).data.publicUrl; }
+    const row={shop_id:shop.id,name_ar:$("pAr").value.trim(),name_en:$("pEn").value.trim(),price:parseFloat($("pPrice").value)||0,img,vlabel:$("pVl").value.trim()||null,
+      variants:$("pVs").value.split(",").map(s=>s.trim()).filter(Boolean),oos:$("pOos").checked};
+    const q=editing?sb.from("products").update(row).eq("id",editing.id):sb.from("products").insert({...row,sort:prods.length});
+    const {error}=await q; if(error) throw error;
+    await loadProds(); renderProds(); $("pd").close();
+  }catch(e){ msg("pMsg",e.message); } finally{ $("pSave").disabled=false; }
+};
+$("pDel").onclick=async()=>{ if(!confirm(t().confirm)) return; await sb.from("products").delete().eq("id",editing.id); await loadProds(); renderProds(); $("pd").close(); };
+setLang("ar");
+</script>
+</body>
+</html>
